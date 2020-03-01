@@ -1,11 +1,14 @@
 {
-  "name": "localization",
+  "name": "drkn-locale",
   "version": "1.0.0",
   "main": "localization.js",
-  "repository": "https://github.com/Mirazex/localization.git",
+  "repository": "https://github.com/Mirazex/drkn-locale.git",
   "author": "mirazex <dragonmorn@gmail.com>",
   "license": "MIT",
   "private": false,
+  "keywords": [
+    "locales", "locale", "language"
+  ],
   "dependencies": {
     "advanced-json-path": "^1.0.8",
     "js-yaml": "^3.13.1",
