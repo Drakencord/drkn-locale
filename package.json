@@ -9,12 +9,15 @@
   "keywords": [
     "locales",
     "locale",
-    "language"
+    "language",
+    "i18n",
+    "internationalize"
   ],
   "dependencies": {
     "advanced-json-path": "^1.0.8",
     "js-yaml": "^3.13.1",
     "mustache": "^4.0.0",
-    "node-yaml": "^4.0.1"
+    "node-yaml": "^4.0.1",
+    "yaml": "^1.7.2"
   }
 }
