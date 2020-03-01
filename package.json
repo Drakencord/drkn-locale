@@ -1,8 +1,8 @@
 {
-  "name": "Locke",
+  "name": "localization",
   "version": "1.0.0",
   "main": "localization.js",
-  "repository": "https://github.com/Mirazex/Locke.git",
+  "repository": "https://github.com/Mirazex/localization.git",
   "author": "mirazex <dragonmorn@gmail.com>",
   "license": "MIT",
   "private": false,
