@@ -1,7 +1,7 @@
 {
   "name": "Locke",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "localicator.js",
   "repository": "https://github.com/Mirazex/Locke.git",
   "author": "mirazex <dragonmorn@gmail.com>",
   "license": "MIT",
