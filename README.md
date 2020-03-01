@@ -1,2 +1,1 @@
-# Locke
- 
+# Custom localization lib

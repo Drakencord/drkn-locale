@@ -3,6 +3,7 @@ const fs = require('fs')
 const yaml = require('js-yaml')
 const YAML = require('node-yaml')
 const JSONPath = require('advanced-json-path')
+const Mustache = require('mustache')
 
 module.exports = class Localizer {
     constructor() {
@@ -10,12 +11,14 @@ module.exports = class Localizer {
         this.directory = path.join(__dirname, 'locales')
         this.defaultLocale = 'en'
         this.locales = {}
+        this.localeFiles = {}
         this.updateFiles = false
         this.syncFiles = false
     }
 
     configure(options) {
         this.locales = {}
+        this.localeFiles = {}
 
         this.directory = (typeof options.directory === 'string') ? options.directory : path.join(__dirname, 'locales')
         this.updateFiles = (typeof options.updateFiles === 'boolean') ? options.updateFiles : true
@@ -24,11 +27,21 @@ module.exports = class Localizer {
         this.autoReload = (typeof options.autoReload === 'boolean') ? options.autoReload : false
         options.locales = options.locales || ['en']
 
+
+
         // Считываем существующие языки
         if (Array.isArray(options.locales)) {
             // Считываем каждую папку языка
             options.locales.forEach((locale) => {
-                this.readFolder(locale)
+                let folder = this.readFolder(locale)
+
+                if (Array.isArray(options.localeFiles)) {
+                    options.localeFiles.forEach((file) => {
+                        let filePath = path.normalize(path.join(this.directory, locale, file+'.yaml'))
+                        if (fs.existsSync(filePath)) return
+                        fs.openSync(filePath, 'w')
+                    })
+                }
                 // Автоматически обновляем новые данные при изименении без перезагрузки
                 if (this.autoReload) {
                     fs.watch(`${this.directory}/${locale}`, (event, filename) => {
@@ -39,6 +52,21 @@ module.exports = class Localizer {
                 }
             })
         }
+    }
+
+    translateFromFile(filename, string, object) {
+        let locale = this.locale ? this.locale : this.defaultLocale
+        let file = filename
+
+        let result = this.translate(locale, file, string)
+
+        if (object && typeof object === 'object') {
+            if ((/{{.*}}/).test(result)) { 
+                result = Mustache.render(result, object) 
+            }
+        }
+
+        return result 
     }
 
     // Перевод
@@ -95,7 +123,6 @@ module.exports = class Localizer {
                 let data = this.getString(locale, filename, string)
                 
                 if (!data) { 
-                    console.log(locale, filename, string)
                     this.writeFile(locale, filename, string) 
                 }
             } catch (e) {
@@ -114,15 +141,16 @@ module.exports = class Localizer {
         return obj
     }
 
-    setDefaultJson(string, object) {
+    setDefaultJson(string, object, locale) {
         let data
         if (!object) data = {}
         else data = object
         string = string.replace(/[\[]/gm, '.').replace(/[\]]/gm, '')
-        var keys = string.split('.'),
+        let keys = string.split('.'),
             last = keys.pop();
+        
+        keys.reduce(function (o, k) { return o[k] = o[k] || {}; }, data)[last] = `${locale} locale for \`${last}\` not found`
 
-        keys.reduce(function (o, k) { return o[k] = o[k] || {}; }, data)[last] = 'locale not found'
         return data
     }
 
@@ -224,6 +252,9 @@ module.exports = class Localizer {
             try {
                 // Кидаем ярлык на данные
                 this.locales[locale][filename] = LocaleFile
+                this[filename] = (string, object) => {
+                    return this.translateFromFile(filename, string, object)
+                }
             } catch (e) {
                 // Если вдруг не удалось
                 console.log(`Failed create link to this.locales.${locale} from ${filename}`)
@@ -263,7 +294,7 @@ module.exports = class Localizer {
             FilePath = path.normalize(path.join(this.directory, locale, `${filename}.yaml`))
             // Создаем временный файл и записываем в него
             let data
-            if (string) data = this.setDefaultJson(string, this.locales[locale][filename])
+            if (string) data = this.setDefaultJson(string, this.locales[locale][filename], locale)
             else data = this.locales[locale][filename]
 
             YAML.writeSync(`${FilePath}.tmp`, data, { encoding: 'utf8' })
