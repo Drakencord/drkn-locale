@@ -4,6 +4,7 @@ const yaml = require('js-yaml')
 const YAML = require('node-yaml')
 const JSONPath = require('advanced-json-path')
 const Mustache = require('mustache')
+const Yaml = require('yaml')
 
 module.exports = class Localizer {
     constructor() {
@@ -216,18 +217,22 @@ module.exports = class Localizer {
         
         let LocaleFolder
         // Получаем руть к папке
-        let FolderPath = path.normalize(path.join(this.directory, locale))
+        let FolderPath = path.join(this.directory, locale)
         
         try {
             // Считываем содержимое папки
             LocaleFolder = fs.readdirSync(FolderPath)
             // Обрабатываем каждый файл в папке
-            LocaleFolder.forEach(f => {
-                let extensionRegex = new RegExp('.yaml' + '$', 'g')
-                let localeFile = f.replace(extensionRegex, '')
-                this.readFile(locale, localeFile)
-            })
+            if (LocaleFolder) {
+                LocaleFolder.forEach(f => {
+                    let extensionRegex = new RegExp('.yaml' + '$', 'g')
+                    let localeFile = f.replace(extensionRegex, '')
+                    this.readFile(locale, localeFile)
+                })
+            }
+            
         } catch (e) {
+
             // Если папки нет (но она отображается - переименовываем)
             if (fs.existsSync(FolderPath)) fs.renameSync(FolderPath, `${FolderPath}.invalid`)
             // И создаем новую
@@ -245,13 +250,15 @@ module.exports = class Localizer {
         let LocaleFile
         // Получаем путь к файлу
         let FilePath = path.normalize(path.join(this.directory, locale, `${filename}.yaml`))
-
+        
         try {
             // Считываем данные файла
-            LocaleFile = YAML.readSync(FilePath, { encoding: 'utf8'})
+            LocaleFile = fs.readFileSync(FilePath, { encoding: 'utf8'})
+            let File = yaml.safeLoad(LocaleFile)
             try {
                 // Кидаем ярлык на данные
-                this.locales[locale][filename] = LocaleFile
+
+                this.locales[locale][filename] = File
                 this[filename] = (string, object) => {
                     return this.translateFromFile(filename, string, object)
                 }
@@ -260,10 +267,11 @@ module.exports = class Localizer {
                 console.log(`Failed create link to this.locales.${locale} from ${filename}`)
             }
         } catch (e) {
+
             // Если не удалось считать данные с файла проверяем на его наличие
             if (fs.existsSync(FilePath)) {
                 // Если файл есть то переименовываем и сообщаем об этом
-                console.log(`Invalid locale data from file '${locale}/${file}'`)
+                console.log(`Invalid locale data from file '${locale}/${filename}'`)
                 fs.renameSync(FilePath, `${FilePath}.invalid`)
             }
 
@@ -289,17 +297,18 @@ module.exports = class Localizer {
         }
 
         // Записываем в файл данные
+
         try {
             // Получаем путь к файлу
-            FilePath = path.normalize(path.join(this.directory, locale, `${filename}.yaml`))
+            FilePath = path.join(this.directory, locale, `${filename}.yaml`)
             // Создаем временный файл и записываем в него
             let data
             if (string) data = this.setDefaultJson(string, this.locales[locale][filename], locale)
             else data = this.locales[locale][filename]
-
-            YAML.writeSync(`${FilePath}.tmp`, data, { encoding: 'utf8' })
+                
+            data = Yaml.stringify(data)
+            fs.appendFileSync(`${FilePath}.tmp`, data, { encoding: 'utf8' })
             // Проверяем есть ли временный файл
-            
             stats = fs.statSync(`${FilePath}.tmp`)
             // Если временный файл - это файл, тогда переименовываем его в стандартый тип
             if (stats.isFile()) { fs.renameSync(`${FilePath}.tmp`, FilePath) } 
