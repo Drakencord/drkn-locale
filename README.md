@@ -51,7 +51,7 @@ user:
 #### Code
 ```js
 // Used default language
-locale.filename('user.username)
+locale.filename('user.username')
 // Response: Mark
 
 // Use specify language
