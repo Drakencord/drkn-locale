@@ -9,7 +9,7 @@ If you want to use this library, you can simply install
 
 ### Configure
 ```js
-const drknLocale = require('./localization')
+const drknLocale = require('drkn-locale')
 const path = require('path')
 
 const locale = new drknLocale()
